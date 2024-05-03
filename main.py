@@ -6,7 +6,7 @@ def menu_opt():
     usr_opt = input("\nDigite uma opção válida: ")
 
     if usr_opt == '1':
-        return None
+        criar_arquivo()
     elif usr_opt == '2':
         return None
     elif usr_opt == '3':
@@ -22,6 +22,8 @@ def menu_opt():
     else:
         print("Opção inválida")
 
+def criar_arquivo():
+    
 
 if __name__ == '__main__':
     menu_opt()
