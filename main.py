@@ -49,7 +49,7 @@ def incluir_vendedor():
 
 def excluir_vendedor():
     cod_excluido = input("\nDigite o código do vendedor que deseja excluir (se quiser cancelar a operação digite zero): ")
-    if cod_excluido == 0:
+    if cod_excluido == '0':
         print("Operação cancelada.\n")
         menu_opt()
     else:
