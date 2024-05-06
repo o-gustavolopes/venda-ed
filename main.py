@@ -12,11 +12,11 @@ def menu_opt():
     elif usr_opt == '3':
         excluir_vendedor()
     elif usr_opt == '4':
-        return None
+        alterar_valores()
     elif usr_opt == '5':
-        return None
+        print_registros()
     elif usr_opt == '6':
-        return None
+        vendedor_maior_venda()
     elif usr_opt == '7':
         print("Saindo...")
     else:
@@ -40,7 +40,7 @@ def incluir_vendedor():
         codigo_vendedor = int(input("\nDigite o código do vendedor: "))
 
         with open('arquivo.txt', 'a') as arquivo:
-            arquivo.write(str(codigo_vendedor) + '\n')
+            arquivo.write(str(codigo_vendedor) + ',\n')
         print("Vendedor incluído com sucesso!\n")
     except ValueError:
         print("O código precisa ser um número inteiro.")
@@ -75,7 +75,50 @@ def excluir_vendedor():
     menu_opt()
 
 def alterar_valores():
-    pass
+    codigo_vendedor = input("\nDigite o código do vendedor (digite zero para cancelar a operação): ")
+
+    if codigo_vendedor == '0':
+        menu_opt()
+
+    novo_valor = input("Digite o novo valor da venda: ")
+
+    # Convertendo o código do vendedor para string
+    codigo_vendedor = str(codigo_vendedor)
+
+    if not codigo_vendedor.isdigit():
+        print("O código do vendedor precisa ser um número.")
+        alterar_valores()
+        return
+
+    if not novo_valor.replace('.', '', 1).isdigit():
+        print("O novo valor da venda precisa ser um número real.")
+        alterar_valores()
+        return
+
+    with open('arquivo.txt', 'r') as arquivo_leitura:
+        linhas = arquivo_leitura.readlines()
+
+    vendedor_encontrado = False
+    with open('arquivo.txt', 'w') as arquivo_escrita:
+        for linha in linhas:
+            partes = linha.strip().split(',')
+            # Removendo espaços em branco extras e convertendo o código do vendedor para string
+            if len(partes) >= 2 and partes[0].strip() == codigo_vendedor:
+                partes[1] = novo_valor
+                vendedor_encontrado = True
+                arquivo_escrita.write(','.join(partes) + '\n')
+            else:
+                arquivo_escrita.write(linha)
+
+    if vendedor_encontrado:
+        print(f"Valor da venda do vendedor {codigo_vendedor} alterado com sucesso.")
+    else:
+        print("Vendedor não encontrado.")
+        alterar_valores()
+
+    menu_opt()
+
+
 
 def print_registros():
     pass
