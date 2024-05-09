@@ -1,8 +1,23 @@
+# Estrutura de Dados tarefa
+# Data de entrega: 04/09
+# Alunos:
+# 1- João Victor Ricardo Dias Leal
+# 2- Gustavo Lopes Martins
+
+import struct
+
+registro_format = "if8s"  # Integer (4 bytes), Float (4 bytes), String (8 bytes)
+
+
 def menu_opt():
-    print("1 - Criar o arquivo de dados\n2 - Incluir um determinado vendedor no arquivo\n3 - Excluir um determinado "
-          "vendedor no arquivo\n4 - Alterar o valor toral da venda de um determinado vendedor de um determinado "
-          "mês\n5 - Imprimir os registros na saída padrão\n6 - Consultar o vendedor com maior valor da venda\n7 - "
-          "Finalizar o programa")
+    print("1 - Criar o arquivo de dados")
+    print("2 - Incluir um determinado vendedor no arquivo")
+    print("3 - Excluir um determinado vendedor no arquivo")
+    print("4 - Alterar o valor total da venda de um determinado vendedor de um determinado mês")
+    print("5 - Imprimir os registros na saída padrão")
+    print("6 - Consultar o vendedor com maior valor da venda")
+    print("7 - Finalizar o programa")
+
     usr_opt = input("\nDigite uma opção válida: ")
 
     if usr_opt == '1':
@@ -12,119 +27,165 @@ def menu_opt():
     elif usr_opt == '3':
         excluir_vendedor()
     elif usr_opt == '4':
-        alterar_valores()
+        alterar_valor_venda()
     elif usr_opt == '5':
-        print_registros()
+        imprimir_registros()
     elif usr_opt == '6':
-        vendedor_maior_venda()
+        consultar_maior_venda()
     elif usr_opt == '7':
         print("Saindo...")
     else:
         print("Opção inválida")
         menu_opt()
 
-def criar_arquivo():
-    arquivo = "arquivo.txt"
 
+def criar_arquivo():
     try:
-        with open(arquivo, 'w') as arq:
-            pass
-        print(f"\nArquivo '{arquivo}' criado com sucesso!\n")
+        with open('arquivo_vendas.bin', 'wb'):
+            print("Arquivo de dados criado com sucesso!")
     except Exception as e:
-        print(f"\nOcorreu um erro ao criar o arquivo: {e}\n")
+        print(f"Ocorreu um erro ao criar o arquivo de dados: {e}")
 
     menu_opt()
+
 
 def incluir_vendedor():
     try:
-        codigo_vendedor = int(input("\nDigite o código do vendedor: "))
+        codigo_vendedor = int(input("Digite o código do vendedor: "))
+        valor_venda = float(input("Digite o valor da venda: "))
+        mes_ano = input("Digite o mês e ano (mm/aaaa): ")
 
-        with open('arquivo.txt', 'a') as arquivo:
-            arquivo.write(str(codigo_vendedor) + ',\n')
-        print("Vendedor incluído com sucesso!\n")
-    except ValueError:
-        print("O código precisa ser um número inteiro.")
+        with open('arquivo_vendas.bin', 'ab') as arquivo:
+            registro = struct.pack(registro_format, codigo_vendedor, valor_venda, mes_ano.encode())
+            arquivo.write(registro)
+
+        print("Vendedor incluído com sucesso!")
+    except Exception as e:
+        print(f"Ocorreu um erro ao incluir o vendedor: {e}")
 
     menu_opt()
+
 
 def excluir_vendedor():
-    cod_excluido = input("\nDigite o código do vendedor que deseja excluir (se quiser cancelar a operação digite zero): ")
-    if cod_excluido == '0':
-        print("Operação cancelada.\n")
-        menu_opt()
-    else:
-        with open('arquivo.txt', 'r') as arquivo_leitura:
-            linhas = arquivo_leitura.readlines()
-            vendedor_encontrado = False
-            for linha in linhas:
-                partes = linha.strip().split(',')
-                if partes[0] == cod_excluido:
+    try:
+        codigo_vendedor = int(input("Digite o código do vendedor que deseja excluir: "))
+        mes_ano = input("Digite o mês e ano do registro que deseja excluir (mm/aaaa): ")
+
+        # Verifica se o formato do mês e ano é válido
+        if len(mes_ano) != 7 or mes_ano[2] != '/' or not mes_ano[:2].isdigit() or not mes_ano[3:].isdigit():
+            print("Formato de mês e ano inválido. Use o formato mm/aaaa.")
+            menu_opt()
+            return
+
+        # Separa o mês e o ano
+        mes, ano = mes_ano.split('/')
+        mes = int(mes)
+        ano = int(ano)
+
+        vendedor_encontrado = False
+
+        with open('arquivo_vendas.bin', 'r+b') as arquivo:
+            while True:
+                registro = arquivo.read(struct.calcsize(registro_format))
+                if not registro:
+                    break
+                registro_data = struct.unpack(registro_format, registro)
+                registro_mes, registro_ano = map(int, registro_data[2].decode().rstrip('\x00').split('/'))
+                if registro_data[0] == codigo_vendedor and registro_mes == mes and registro_ano == ano:
+                    arquivo.seek(-struct.calcsize(registro_format), 1)
+                    arquivo.write(b'\x00' * struct.calcsize(registro_format))
+                    print("Vendedor excluído com sucesso!")
                     vendedor_encontrado = True
+                    break
 
             if not vendedor_encontrado:
-                print("Código do vendedor não encontrado.")
-                excluir_vendedor()
-            else:
-                with open('arquivo.txt', 'w') as arquivo_escrita:
-                    for linha in linhas:
-                        partes = linha.strip().split(',')
-                        if partes[0] != cod_excluido:
-                            arquivo_escrita.write(linha)
-                print(f"Vendedor {cod_excluido} excluído com sucesso.\n")
+                print("Vendedor não encontrado.")
 
-    menu_opt()
-
-def alterar_valores():
-    codigo_vendedor = input("\nDigite o código do vendedor (digite zero para cancelar a operação): ")
-
-    if codigo_vendedor == '0':
-        menu_opt()
-
-    novo_valor = input("Digite o novo valor da venda: ")
-
-    # Convertendo o código do vendedor para string
-    codigo_vendedor = str(codigo_vendedor)
-
-    if not codigo_vendedor.isdigit():
-        print("O código do vendedor precisa ser um número.")
-        alterar_valores()
-        return
-
-    if not novo_valor.replace('.', '', 1).isdigit():
-        print("O novo valor da venda precisa ser um número real.")
-        alterar_valores()
-        return
-
-    with open('arquivo.txt', 'r') as arquivo_leitura:
-        linhas = arquivo_leitura.readlines()
-
-    vendedor_encontrado = False
-    with open('arquivo.txt', 'w') as arquivo_escrita:
-        for linha in linhas:
-            partes = linha.strip().split(',')
-            # Removendo espaços em branco extras e convertendo o código do vendedor para string
-            if len(partes) >= 2 and partes[0].strip() == codigo_vendedor:
-                partes[1] = novo_valor
-                vendedor_encontrado = True
-                arquivo_escrita.write(','.join(partes) + '\n')
-            else:
-                arquivo_escrita.write(linha)
-
-    if vendedor_encontrado:
-        print(f"Valor da venda do vendedor {codigo_vendedor} alterado com sucesso.")
-    else:
-        print("Vendedor não encontrado.")
-        alterar_valores()
+    except Exception as e:
+        print(f"Ocorreu um erro ao excluir o vendedor: {e}")
 
     menu_opt()
 
 
+def alterar_valor_venda():
+    try:
+        codigo_vendedor = int(input("Digite o código do vendedor que deseja alterar: "))
+        mes_ano = input("Digite o mês e ano do registro que deseja alterar (mm/aaaa): ")
+        novo_valor = float(input("Digite o novo valor da venda: "))
 
-def print_registros():
-    pass
+        # Verifica se o formato do mês e ano é válido
+        if len(mes_ano) != 7 or mes_ano[2] != '/' or not mes_ano[:2].isdigit() or not mes_ano[3:].isdigit():
+            print("Formato de mês e ano inválido. Use o formato mm/aaaa.")
+            menu_opt()
+            return
 
-def vendedor_maior_venda():
-    pass
+        # Separa o mês e o ano
+        mes, ano = mes_ano.split('/')
+        mes = int(mes)
+        ano = int(ano)
+
+        vendedor_encontrado = False
+
+        with open('arquivo_vendas.bin', 'r+b') as arquivo:
+            while True:
+                registro = arquivo.read(struct.calcsize(registro_format))
+                if not registro:
+                    break
+                registro_data = struct.unpack(registro_format, registro)
+                registro_mes, registro_ano = map(int, registro_data[2].decode().rstrip('\x00').split('/'))
+                if registro_data[0] == codigo_vendedor and registro_mes == mes and registro_ano == ano:
+                    novo_registro = struct.pack(registro_format, codigo_vendedor, novo_valor, registro_data[2])
+                    arquivo.seek(-struct.calcsize(registro_format), 1)
+                    arquivo.write(novo_registro)
+                    print("Valor da venda alterado com sucesso!")
+                    vendedor_encontrado = True
+                    break
+
+            if not vendedor_encontrado:
+                print("Vendedor não encontrado.")
+
+    except Exception as e:
+        print(f"Ocorreu um erro ao alterar o valor da venda: {e}")
+
+    menu_opt()
+
+
+def imprimir_registros():
+    try:
+        with open('arquivo_vendas.bin', 'rb') as arquivo:
+            while True:
+                registro = arquivo.read(struct.calcsize(registro_format))
+                if not registro:
+                    break
+                registro_data = struct.unpack(registro_format, registro)
+                print(f"Código do vendedor: {registro_data[0]}, Valor da venda: {registro_data[1]}, "
+                      f"Mês e ano: {registro_data[2].decode()}")
+    except Exception as e:
+        print(f"Ocorreu um erro ao imprimir os registros: {e}")
+
+    menu_opt()
+
+
+def consultar_maior_venda():
+    try:
+        maior_venda = None
+        with open('arquivo_vendas.bin', 'rb') as arquivo:
+            while True:
+                registro = arquivo.read(struct.calcsize(registro_format))
+                if not registro:
+                    break
+                registro_data = struct.unpack(registro_format, registro)
+                if maior_venda is None or registro_data[1] > maior_venda[1]:
+                    maior_venda = registro_data
+        if maior_venda:
+            print(f"Vendedor com maior valor de venda: Código: {maior_venda[0]}, Valor: {maior_venda[1]}, "
+                  f"Mês e ano: {maior_venda[2].decode()}")
+        else:
+            print("Não há registros de vendas.")
+    except Exception as e:
+        print(f"Ocorreu um erro ao consultar o vendedor com maior valor de venda: {e}")
+
+    menu_opt()
 
 
 if __name__ == '__main__':
